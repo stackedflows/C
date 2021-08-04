@@ -2,74 +2,91 @@
 #include <stdlib.h>
 #include <pthread.h>
 
-struct sequenceInfo{
-  char* sequence;
+struct str{
+  char* seq;
   int len;
 };
 
-// time complexity: O(n^2)
-// space complexity: O(1)
-void *odd(struct sequenceInfo* seqInfo){
-  char* seq = seqInfo->sequence;
-  int len = seqInfo->len;
-  int currMaxOdd = 0;
-  for(int i = 1; i < len - 1; i++){
+void *odd(void* arg){
+  struct str index = *(struct str*)arg;
+  int maxAns = 1;
+  for(int i = 1; i < index.len; i++){
     int low = i - 1;
     int high = i + 1;
-    int tempMaxOdd = 1;
-    while(low >= 0 && high < len && seq[low] == seq[high]){
+    int currMax = 1;
+    while(low >= 0 && high < index.len && index.seq[low] == index.seq[high]){
       low--;
       high++;
-      tempMaxOdd = tempMaxOdd + 2;
+      currMax=currMax+2;
     }
-    if(tempMaxOdd > currMaxOdd){
-      currMaxOdd = tempMaxOdd;
+    if(currMax > maxAns){
+      maxAns = currMax;
     }
   }
   int* res = malloc(sizeof(int));
-  *res = currMaxOdd;
-  printf("%d\n", currMaxOdd);
-  return (void*)&res;
+  *res = maxAns;
+  free(arg);
+  return (void*)res;
 }
 
-// time complexity: O(n^2)
-// space complexity: O(1)
-void *even(struct sequenceInfo* seqInfo){
-  char* seq = seqInfo->sequence;
-  int len = seqInfo->len;
-  int currMaxEven = 0;
-  for(int i = 0; i < len - 1; i++){
+void *even(void* arg){
+  struct str index = *(struct str*)arg;
+  int maxAns = 0;
+  for(int i = 0; i < index.len; i++){
     int low = i;
     int high = i + 1;
-    int tempMaxEven = 0;
-    while(low >= 0 && high < len && seq[low] == seq[high]){
+    int currMax = 0;
+    while(low >= 0 && high < index.len && index.seq[low] == index.seq[high]){
       low--;
       high++;
-      tempMaxEven = tempMaxEven + 2;
+      currMax=currMax+2;
     }
-    if(tempMaxEven > currMaxEven){
-      currMaxEven = tempMaxEven;
+    if(currMax > maxAns){
+      maxAns = currMax;
     }
   }
   int* res = malloc(sizeof(int));
-  *res = currMaxEven;
-  printf("%d\n", currMaxEven);
-  return (void*)&res;
+  *res = maxAns;
+  free(arg);
+  return (void*)res;
 }
 
-// execute both "odd" and "even" in parallel on spereate threads, then compare their results
-// total time complexity: O(n^2)
 int main(void){
-  char seq0[] = "asdhjbajshsj";
-  char seq1[] = "asdhjbajshhsjsf";
-  int len0 = sizeof(seq0)/sizeof(seq0[0]) - 1;
-  int len1 = sizeof(seq1)/sizeof(seq1[0]) - 1;
-  struct sequenceInfo str0 = {(char*)seq0, len0};
-  struct sequenceInfo str1 = {(char*)seq1, len1};
-  struct sequenceInfo* s0 = &str0;
-  struct sequenceInfo* s1 = &str1;
 
-  odd(s0);
-  even(s1);
+  char seq0[] = "aaasaaasadaadsdafa";
+  int len = sizeof(seq0)/sizeof(seq0[0])-1;
+
+  struct str* s0 = malloc(sizeof(struct str));
+  struct str* s1 = malloc(sizeof(struct str));
+  s0->seq = (char*)seq0;
+  s1->seq = (char*)seq0;
+  s0->len = len;
+  s1->len = len;
+
+  pthread_t t0;
+  pthread_t t1;
+  int* res0;
+  int* res1;
+  if (pthread_create(&t0, NULL, &odd, s0)!=0){
+    return 0;
+  }
+  if (pthread_create(&t1, NULL, &even, s1)!=0){
+    return 00;
+  }
+  if(pthread_join(t0, (void**)&res0)!=0){
+    return 1;
+  }
+  if(pthread_join(t1, (void**)&res1)!=0){
+    return 11;
+  }
+
+  if(*res0 > *res1){
+    printf("%d\n", *res0);
+  }else{
+    printf("%d\n", *res1);
+  }
+
+  free(s0);
+  free(s1);
   return 0;
 }
