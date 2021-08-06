@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <time.h>
 
+// main prog
 struct str{
   char* seq;
   int len;
@@ -51,9 +53,24 @@ void *even(void* arg){
   return (void*)res;
 }
 
-int main(void){
+// timer
+long timediff(clock_t t1, clock_t t2) {
+    long elapsed;
+    elapsed = ((double)t2 - t1) / CLOCKS_PER_SEC * 1000000;
+    return elapsed;
+}
 
-  char seq0[] = "aaasaaasadaadsdafa";
+int main(void){
+  // timer
+  clock_t ti1, ti2;
+  int i;
+  float x = 2.7182;
+  long elapsed;
+
+  ti1 = clock();
+
+  // main program
+  char seq0[] = "aaasadsdafasdhjkagsdfjhasjbjflASHBFHJASKBHFKJASBFASSDHJGVAHDGVsakhjfdsakjfuadsfk";
   int len = sizeof(seq0)/sizeof(seq0[0])-1;
 
   struct str* s0 = malloc(sizeof(struct str));
@@ -88,5 +105,11 @@ int main(void){
 
   free(s0);
   free(s1);
+
+  // end timer
+  ti2 = clock();
+
+  elapsed = timediff(ti1, ti2);
+  printf("elapsed: %ld microseconds\n", elapsed);
   return 0;
 }
