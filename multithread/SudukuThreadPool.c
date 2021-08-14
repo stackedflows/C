@@ -1,22 +1,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-//#include <pthread.c>
-//#include <unistd.h>
+#include <pthread.h>
+#include <unistd.h>
 
+#define rowThreadNum 2
+
+#define squareUnit 2
 #define square 4
-#define squareUnit floor(sqrt(square))
+int** input;
 
-//
-// tasks for threads to complete
-//
-typedef struct TaskRow {
-  int index;
-  int input[][square];
-} TaskRow;
-TaskRow rowTaskQueue[256];
-int rowTaskCount = 0;
-
+/*
 typedef struct TaskCol {
   int index;
   int input[][square];
@@ -31,26 +25,9 @@ typedef struct TaskSquare {
 } TaskSquare;
 TaskSquare squareTaskQueue[256];
 int squareTaskCount = 0;
+*/
 
-//
-// executionable tasks
-//
-int checkRow(int input[][square], int index){
-  int available[] = {0,0,0,0,0,0,0,0,0,0};
-  for(int i = 0; i < square; i++){
-    if(input[index][i] == -1){
-      continue;
-    }
-    else{
-      available[input[index][i]]++;
-      if(available[input[index][i]] > 1){
-        return 0;
-      }
-    }
-  }
-  return 1;
-}
-
+/*
 int checkCol(int input[][square], int index){
   int available[] = {0,0,0,0,0,0,0,0,0,0};
   for(int i = 0; i < square; i++){
@@ -84,19 +61,122 @@ int checkSquare(int input[][square], int subX, int subY){
   }
   return 1;
 }
+*/
 
-//
-// total number of independent processes here to finish is 3 * square
-//
-int validate(int input[][square]){
-  int isValid = 1;
+// threadpool for row calculations
+typedef struct taskRow {
+  int** input;
+  int index;
+  //int type;
+} taskRow;
+taskRow rowTaskQueue[square];
+int rowTaskCount = 0;
+
+void checkRow(taskRow* task){
+  int** input = task -> input;
+  int index = task -> index;
+  int available[] = {0,0,0,0,0,0,0,0,0,0};
   for(int i = 0; i < square; i++){
-    isValid&&checkRow(input, i);
-    if(isValid == 0) return isValid;
+    if(input[index][i] == -1){
+      continue;
+    }
+    else{
+      available[input[index][i]]++;
+      if(available[input[index][i]] > 1){
+        printf("index: %d fails\n", index);
+        return;
+      }
+    }
+  }
+  printf("index: %d passes\n", index);
+  return;
+}
+
+pthread_mutex_t rowMutexQueue;
+pthread_cond_t rowCondQueue;
+
+void* rowStartThread(void* args){
+  while(1){
+    taskRow task;
+    int found = 0;
+    pthread_mutex_lock(&rowMutexQueue);
+    // waits for task to become available
+    while(rowTaskCount == 0){
+      pthread_cond_wait(&rowCondQueue, &rowMutexQueue);
+
+    }
+    // choose task
+    task = rowTaskQueue[0];
+    int i;
+    for(i = 0; i < rowTaskCount; i++){
+      rowTaskQueue[i] = rowTaskQueue[i + 1];
+    }
+    rowTaskCount--;
+    pthread_mutex_unlock(&rowMutexQueue);
+    // execute task
+    checkRow(&task);
+  }
+}
+
+void submitRowTask(taskRow task){
+  pthread_mutex_lock(&rowMutexQueue);
+  rowTaskQueue[rowTaskCount] = task;
+  rowTaskCount++;
+  pthread_mutex_unlock(&rowMutexQueue);
+  pthread_cond_signal(&rowCondQueue);
+}
+
+int main(void){
+
+  //
+  // input example
+  //
+  int arrayIn[][square] = {
+      {1,-1,-1,2},
+      {2,-1,1,1},
+      {0,3,-1,-1},
+      {-1,-1,2,2}
+    };
+
+  input = malloc(square * sizeof(int*));
+  for(int i = 0; i < square; i++){
+    input[i] = malloc(square * sizeof(int));
+    for(int j = 0; j < square; j++){
+      input[i][j] = arrayIn[i][j];
+    }
+  }
+
+  //
+  pthread_t th_row[rowThreadNum];
+  pthread_mutex_init(&rowMutexQueue, NULL);
+  pthread_cond_init(&rowCondQueue, NULL);
+  for(int i = 0; i < rowThreadNum; i++){
+    if(pthread_create(&th_row[i], NULL, &rowStartThread, NULL) != 0){
+      printf("failed to create thread\n");
+    }
   }
   for(int i = 0; i < square; i++){
-    isValid&&checkCol(input, i);
-    if(isValid == 0) return isValid;
+    taskRow t1 = {
+      .input = input,
+      .index = i
+    };
+    submitRowTask(t1);
+  }
+  for(int i = 0; i < rowThreadNum; i++){
+    if(pthread_join(th_row[i], NULL) != 0){
+      printf("failed to join thread\n");
+    }
+  }
+  pthread_mutex_destroy(&rowMutexQueue);
+  pthread_cond_destroy(&rowCondQueue);
+
+  /*
+  for(int i = 0; i < square; i++){
+    isValid = isValid&&checkRow(input, i);
+    if(isValid == 0){
+      printf("%d\n", isValid);
+      return isValid;
+    }
   }
 
   int subX = 0;
@@ -104,31 +184,17 @@ int validate(int input[][square]){
   for(int i = 0; i < squareUnit; i++){
     subY = 0;
     for(int j = 0; j < squareUnit; j++){
-      isValid&&checkSquare(input, subX, subY);
-      if(isValid == 0) return isValid;
+      isValid = isValid&&checkSquare(input, subX, subY);
+      if(isValid == 0){
+        printf("%d\n", isValid);
+        return isValid;
+      }
       subY = subY + squareUnit;
     }
     subX = subX + squareUnit;
   }
-  return isValid;
-}
+  */
 
-//
-// approach: leave 2 threads in 3 thread pools, and make the task queue of length 3 * square
-//
-int main(void){
-
-  int input0[][square] = {
-    {1,-1,-1,-1},
-    {2,-1,1,3},
-    {0,3,-1,-1},
-    {-1,-1,2,-1}
-  };
-
-  int width = sizeof(input0)/sizeof(input0[0]);
-  int height = sizeof(input0[0])/sizeof(int);
-
-  int k = validate(input0);
-  printf("%d\n", k);
-  return 0;
+  free(input);
+  return 1;
 }
