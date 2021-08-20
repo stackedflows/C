@@ -39,6 +39,52 @@ float vertices[] = {
      0.0f,  0.5f, 0.0f
 };
 
+// inline shader program in glsl, gl shader language
+const char* vertexShaderSource =
+"// specify version\n"
+"#version 330 core\n"
+"// declare vertex attributes with in keyword, set the item as a 3 vector as each vertex has 3 values\n"
+"layout (location = 0) in vec3 aPos;\n"
+"// translate input data into gl readable, do stuff with it\n"
+"void main()\n"
+"{\n"
+"   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+"};\0"
+;
+
+// inline fragment shader prog. in glsl, colours/alpha must be between 0,1. Output must be a single vector4
+const char* fragmentShaderSource =
+"#version 330 core\n"
+"out vec4 FragColor;\n"
+"void main()\n"
+"{\n"
+"   FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
+"}\0"
+;
+
+// checks for errors in the vertex shader source code
+void checkShaderCompilerErrors(unsigned int shader) {
+    int  success;
+    char infoLog[512];
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+    if (!success)
+    {
+        glGetShaderInfoLog(shader, 512, NULL, infoLog);
+        std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+    }
+}
+
+// checks for errors in linker
+void checkLinker(unsigned int linkProgram) {
+    int  success;
+    char infoLog[512];
+    glGetProgramiv(linkProgram, GL_LINK_STATUS, &success);
+    if (!success) {
+        glGetProgramInfoLog(linkProgram, 512, NULL, infoLog);
+        std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+    }
+}
+
 int main() {
     // initialise glfw, check it is using the correct version (3)
     glfwInit();
@@ -64,6 +110,61 @@ int main() {
 
     // assign gl viewport to glfw window
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+
+    //// - - - now to storing the vertex data on gpu . . .
+    
+    // create vertex buffer object and assign to it a single unit of memory locally
+    unsigned int VBO;
+    glGenBuffers(1, &VBO);
+
+    // bind array buffer to object, as this is the type needed for vbo
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+    // now we can assign the verticies to the buffer, static draw: set once, used many times vs dynamic draw, where the buffer data will change often
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    //// - - - now we can set up a vertex shader and process the array on gpu, and compile it as followed . . .
+
+    // create shader object, with local reference
+    unsigned int vertexShader;
+    vertexShader = glCreateShader(GL_VERTEX_SHADER);
+
+    // attach shader source code to shader, compile
+    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
+    glCompileShader(vertexShader);
+
+    // check for errors in shader compilation
+    checkShaderCompilerErrors(vertexShader);
+
+    //// - - - now for the fragment shader, which colours the shape we will create
+
+    // we create and compile the fragment shader in a similar way to the vertex shader
+    unsigned int fragmentShader;
+    fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
+    glCompileShader(fragmentShader);
+    checkShaderCompilerErrors(fragmentShader);
+
+    //// - - - combined shader program: we need to link the above two programs into one: following which, opengl now knows how to process vertex and fragment data
+
+    // create link program object
+    unsigned int shaderProgram;
+    shaderProgram = glCreateProgram();
+
+    // attach programs to linker
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragmentShader);
+    glLinkProgram(shaderProgram);
+
+    // check to see if linker has worked
+    checkLinker(shaderProgram);
+
+    // now we can use the linked shaders
+    glUseProgram(shaderProgram);
+
+    // and remove the unused shaders
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
 
     // render window context while not exit pressed
     while (!glfwWindowShouldClose(window)){
