@@ -175,6 +175,7 @@ int main() {
     // we create and compile the fragment shader in a similar way to the vertex shader
     unsigned int fragmentShader;
     fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    // compiles and checks fragments
     fragmentShaderCompile(fragmentShader);
 
     //// - - - combined shader program: we need to link the above two programs into one: following which, opengl now knows how to process vertex and fragment data
