@@ -162,6 +162,22 @@ int main() {
     // bind verticies to correct api data type, send to gpu
     verticiesToGPU(VBO);
 
+    //// - - - generating vertex array object
+
+    // create reference
+    unsigned int VAO;
+    glGenVertexArrays(1, &VAO);
+
+    // all we need to do in bind the vao, and then operate on vbo
+    glBindVertexArray(VAO);
+    // copy our vertices array in a buffer for OpenGL to use
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    // then set our vertex attributes pointers
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+
     //// - - - now we can set up a vertex shader and process the array on gpu, and compile it as followed . . .
 
     // create shader object, with local reference
@@ -194,6 +210,11 @@ int main() {
         // rendering commands here ... 
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
+
+        // draw object
+        glUseProgram(shaderProgram);
+        glBindVertexArray(VAO);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
 
         // swap color buffers, check if events are triggered
         glfwSwapBuffers(window);
