@@ -32,20 +32,6 @@ void processInput(GLFWwindow* window){
         glfwSetWindowShouldClose(window, true);
 }
 
-// define two triangle verticies
-float vertices[] = {
-     0.5f,  0.5f, 0.0f,  // top right
-     0.5f, -0.5f, 0.0f,  // bottom right
-    -0.5f, -0.5f, 0.0f,  // bottom left
-    -0.5f,  0.5f, 0.0f   // top left 
-};
-// define relationship between verticies
-unsigned int indicies[] = {  // note that we start from 0!
-    0, 1, 3,   // first triangle
-    1, 2, 3    // second triangle
-};
-
-
 // inline shader program in glsl, gl shader language
 const char* vertexShaderSource =
 "// specify version\n"
@@ -152,6 +138,19 @@ int main() {
     ///
     /// verticies
     /// 
+
+    // define two triangle verticies
+    float vertices[] = {
+         0.5f,  0.5f, 0.0f,  // top right
+         0.5f, -0.5f, 0.0f,  // bottom right
+        -0.5f, -0.5f, 0.0f,  // bottom left
+        -0.5f,  0.5f, 0.0f   // top left 
+    };
+    // define relationship between verticies
+    unsigned int indicies[] = {  // note that we start from 0!
+        0, 1, 3,   // first triangle
+        1, 2, 3    // second triangle
+    };
     
     // create vertex buffer object and assign to it a single unit of memory locally
     unsigned int VBO, VAO, EBO;
