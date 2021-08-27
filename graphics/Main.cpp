@@ -3,6 +3,7 @@
 #include <shader.h>
 #include <iostream>
 #include <stdlib.h>
+#include <stdio.h>
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 
@@ -50,7 +51,7 @@ int main()
     // -------------------------
     Shader shader("vertexShader.hlsl", "fragShader.hlsl");
 
-    // generate a list of 100 quad locations/translation-vectors
+    // generate a list of 100 quad locations/translation-vectors, in random locations
     // ---------------------------------------------------------
     glm::vec2 translations[100];
     int index = 0;
@@ -59,12 +60,20 @@ int main()
     {
         for (int x = -10; x < 10; x += 2)
         {
+            bool add_x = rand() % 10 < 5;
+            bool add_y = rand() % 10 < 5;
+            float x_dir = -1.0f;
+            float y_dir = -1.0f;
+            if (add_x) x_dir = 1;
+            if (add_y) y_dir = 1;
             glm::vec2 translation;
-            translation.x = (float)x / 10.0f + offset;
-            translation.y = (float)y / 10.0f + offset;
+            translation.x = (float)x / 10.0f + offset + x_dir * float(rand()%10)/10.0;
+            translation.y = (float)y / 10.0f + offset + y_dir * float(rand()%10)/10.0;
             translations[index++] = translation;
         }
     }
+
+    //// - - - how do we get new translation matrices to GPU? - - - \\\\ 
 
     // store instance data in an array buffer
     // --------------------------------------
