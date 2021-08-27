@@ -76,7 +76,9 @@ int main()
         }
     }
 
+    //// ---------------------------------------------------------- \\\\
     //// - - - how do we get new translation matrices to GPU? - - - \\\\ 
+    //// ---------------------------------------------------------- \\\\
 
     // store instance data in an array buffer
     // --------------------------------------
@@ -98,6 +100,7 @@ int main()
          0.05f, -0.05f,  0.0f, 1.0f, 0.0f,
          0.05f,  0.05f,  0.0f, 1.0f, 1.0f
     };
+
     unsigned int quadVAO, quadVBO;
     glGenVertexArrays(1, &quadVAO);
     glGenBuffers(1, &quadVBO);
