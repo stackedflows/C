@@ -13,3 +13,7 @@ Using the awesome graphics library https://www.mps.mpg.de/dislin/ to make math-s
 # fundamentals
 
 C++ implimentation of fundamental CS concepts
+
+# multithread
+
+Using pthread library to impliment multi-threaded solutions to various problems. Includes benchmarking.
